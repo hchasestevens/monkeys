@@ -3,13 +3,13 @@ from setuptools import setup
 setup(
     name = 'monkeys',
     packages = ['monkeys'],
-    version = '0.0.1',
+    version = '0.0.2',
     description = 'A genetic programming framework',
     license='MIT',
     author='H. Chase Stevens',
     author_email='chase@chasestevens.com',
-    #url='https://github.com/hchasestevens/astpath',
-    install_requires=[],
+    url='https://github.com/hchasestevens/monkeys',
+    install_requires=['astor'],
     keywords='genetic programming optimization',
     classifiers=[
         'Development Status :: 3 - Alpha',
