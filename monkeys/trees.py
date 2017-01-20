@@ -5,7 +5,7 @@ import functools
 
 import numpy
 
-from .typing import lookup_rtype, rtype, params, prettify_converted_type
+from monkeys.typing import lookup_rtype, rtype, params, prettify_converted_type
 
 
 class UnsatisfiableType(Exception):
