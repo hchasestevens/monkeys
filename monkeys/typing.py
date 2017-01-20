@@ -19,6 +19,8 @@ def convert_type(t):
         converted = (collections.Mapping, convert_type(next(t.iterkeys())), convert_type(next(t.itervalues())))
     elif isinstance(t, _func):
         converted = (_func, tuple(map(convert_type, t.params)), convert_type(t.rtype))
+    elif isinstance(t, basestring):
+        converted = type(t, (object,), {})
     elif isinstance(t, collections.Iterable):
         converted = (collections.Iterable, convert_type(t[0]))
     else:
@@ -42,7 +44,7 @@ def prettify_converted_type(t):
         formatted_inners = map(prettify_converted_type, (first_inner, second_inner))
         if outer is collections.Mapping:
             return '{{{}: {}}}'.format(*formatted_inners)
-        if outer == _func:
+        if outer is _func:
             return '{} -> {}'.format(*formatted_inners)
     except (ValueError, TypeError):
         pass
