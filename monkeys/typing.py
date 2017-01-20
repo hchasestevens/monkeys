@@ -86,7 +86,8 @@ def __type_annotations_factory():
         def decorator(f):
             _param_types = tuple(map(_convert_type, param_types))
             f.allowed_children = allowed_children_factory(_param_types)
-            f.readable_params = ', '.join(map(prettify_converted_type, _param_types))
+            f.readable_param_list = map(prettify_converted_type, _param_types)
+            f.readable_params = ', '.join(f.readable_param_list)
             f.__params = _param_types
             check(f)
             return f

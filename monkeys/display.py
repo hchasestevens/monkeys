@@ -33,7 +33,7 @@ def type_graph(simplify=False):
         pretty_t = prettify_converted_type(t)
         for targeting_function in targeting_functions:
 
-            params = targeting_function.readable_params
+            params = targeting_function.readable_param_list
 
             if not params:
                 add_edge(
@@ -42,29 +42,32 @@ def type_graph(simplify=False):
                 )
                 continue
                 
-            constituent_params = params.split(', ')
-            for param in constituent_params:
+            for param in params:
                 simplified_graph[param].add(pretty_t)
             
             if simplify:
                 # pretend these can go directly to the return type
-                for param in constituent_params:
+                for param in params:
                     add_edge(
                         param,
                         pretty_t
                     )
                 continue
                 
-            elif len(constituent_params) > 1:
+            elif len(params) > 1:
                 # show composition of constructed type from constituents
-                graph.node(params, shape='rect', style='dashed')
-                for param in constituent_params:
+                graph.node(
+                    targeting_function.readable_params, 
+                    shape='rect', 
+                    style='dashed',
+                )
+                for param in params:
                     add_edge(
                         param,
-                        params
+                        targeting_function.readable_params
                     )
                     
-            add_edge(params, pretty_t)
+            add_edge(targeting_function.readable_params, pretty_t)
             
     end_states = {
         t
