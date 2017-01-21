@@ -71,15 +71,15 @@ def type_graph(simplify=False):
             
     end_states = {
         t
-        for t, edges in
-        simplified_graph.items()
-        if not edges
-        or edges == {t}
+        for t in
+        map(prettify_converted_type, REGISTERED_TYPES)
+        if not simplified_graph[t]
+        or simplified_graph[t] == {t}
     }
     for end_state in end_states:
         graph.node(
             end_state, 
-            shape='doublecircle',
+            peripheries='2',
         )
     
     return graph
