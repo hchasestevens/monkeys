@@ -1,4 +1,5 @@
 import ast
+import copy
 import inspect
 import functools
 
@@ -43,7 +44,7 @@ def quoted_template(fn):
     @functools.wraps(fn)
     def wrapper(*args):
         argdict = dict(zip(argnames, args))
-        populated_template = NameReplacer(argdict).visit(fn_node)
+        populated_template = NameReplacer(argdict).visit(copy.deepcopy(fn_node))
         # round-robin AST -> source -> AST conversion to fix type mismatches
         return ast.parse(
             astor.to_source(
