@@ -2,17 +2,23 @@ import collections
 
 
 REGISTERED_TYPES = set()
+_STRING_TYPE_MAPPINGS = {}
+
+
 _func = collections.namedtuple('Function', 'params rtype')
 def func(*args):
+    """Function container for higher-order parameters and return types."""
     assert len(args) >= 2
     return _func(tuple(args[:-1]), args[-1])
 
 
 def __id(x):
+    """Identity function."""
     return x
 
 
 def convert_type(t):
+    """Map given type into representation suitable for internal usage."""
     if not t:
         converted = None
     elif isinstance(t, collections.Mapping):
@@ -20,7 +26,11 @@ def convert_type(t):
     elif isinstance(t, _func):
         converted = (_func, tuple(map(convert_type, t.params)), convert_type(t.rtype))
     elif isinstance(t, basestring):
-        converted = type(t, (object,), {})
+        try:
+            converted = _STRING_TYPE_MAPPINGS[t]
+        except KeyError:
+            converted = type(t, (object,), {})
+            _STRING_TYPE_MAPPINGS[t] = converted
     elif isinstance(t, collections.Iterable):
         converted = (collections.Iterable, convert_type(t[0]))
     else:
@@ -30,6 +40,7 @@ def convert_type(t):
 
 
 def prettify_converted_type(t):
+    """Return human-readable representation of internal type."""
     if t is None:
         return 'None'
     if isinstance(t, type):
@@ -52,9 +63,14 @@ def prettify_converted_type(t):
 
 
 def __type_annotations_factory():
+    """Create rtype, params, constant, and lookup_rtype functions."""
     RTYPES = collections.defaultdict(list)
 
     def register_first_class_function(f):
+        """
+        Register lifted version of function for use with higher-order 
+        functions.
+        """
         @params(convert=False, first_class=False)
         @rtype((_func, f.__params, f.rtype), convert=False, first_class=False)
         def const_f():
@@ -62,13 +78,23 @@ def __type_annotations_factory():
         const_f.func_name = '_FC_{}'.format(f.func_name)
 
     def check_for_registration(f):
+        """
+        Determine if a function has had both return type and parameter 
+        types specified, registering it as a first-class function if 
+        so.
+        """
         if hasattr(f, 'rtype') and hasattr(f, '__params'):
             register_first_class_function(f)
 
     def allowed_children_factory(param_types):
+        """
+        Return a list of the appropriately-typed constants and functions 
+        conforming to each of the specified parameter types.
+        """
         return lambda: [RTYPES[param_type] for param_type in param_types]
 
     def rtype(return_type, convert=True, first_class=True):
+        """Specify the return type of a function."""
         _convert_type = convert_type if convert else __id
         check = check_for_registration if first_class else __id
         def decorator(f):
@@ -81,6 +107,7 @@ def __type_annotations_factory():
         return decorator
 
     def params(*param_types, **kwargs):
+        """Specify the required types for a function."""
         _convert_type = convert_type if kwargs.get('convert', True) else __id
         check = check_for_registration if kwargs.get('first_class', True) else __id
         def decorator(f):
@@ -94,6 +121,7 @@ def __type_annotations_factory():
         return decorator
 
     def constant(return_type, value):
+        """Register a constant value under the given type."""
         @params()
         @rtype(return_type)
         def _const():
@@ -102,6 +130,7 @@ def __type_annotations_factory():
         return value
 
     def lookup_rtype(return_type, convert=True):
+        """Find functions and constants of the given return type."""
         return RTYPES[(convert_type if convert else __id)(return_type)]
 
     return rtype, params, constant, lookup_rtype

@@ -9,6 +9,7 @@ from monkeys.typing import lookup_rtype, rtype, params, prettify_converted_type
 
 
 class UnsatisfiableType(Exception):
+    """Raised when a type constraint cannot be satisfied."""
     pass
 
 
