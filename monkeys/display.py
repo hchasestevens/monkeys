@@ -2,6 +2,7 @@
 Visualization tooling.
 """
 
+import itertools
 from collections import defaultdict
 
 import graphviz
@@ -78,10 +79,24 @@ def type_graph(simplify=False):
     }
     for end_state in end_states:
         graph.node(
-            end_state, 
+            end_state,
             peripheries='2',
         )
     
     return graph
-                    
 
+
+def node_graph(node):
+    """Create a graph representing a node."""
+    graph = graphviz.Graph()
+    counter = itertools.count(1)
+    graph.node('0', label=str(node.f.func_name))
+    frontier = [('0', child) for child in node.children]
+    while frontier:
+        parent, node = frontier.pop()
+        node_num = str(next(counter))
+        graph.node(node_num, label=str(node.f.func_name))
+        graph.edge(parent, node_num)
+        frontier.extend((node_num, child) for child in node.children)
+    return graph
+    
