@@ -7,7 +7,7 @@
 ## What is genetic programming?
 
 Genetic programming algorithms are a class of evolutionary algorithms in which solutions to a problem are represented as executable tree 
-structures - programs. In order two use genetic programming in order to solve a problem, two things must be specified:
+structures - programs. In order to use genetic programming in order to solve a problem, two things must be specified:
 
 1. What form(s) a potential solution can take.
 
