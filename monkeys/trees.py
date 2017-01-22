@@ -8,6 +8,9 @@ import numpy
 from monkeys.typing import lookup_rtype, rtype, params, prettify_converted_type
 
 
+_REGISTERED_INPUTS = {}
+
+
 class UnsatisfiableType(Exception):
     """Raised when a type constraint cannot be satisfied."""
     pass
@@ -33,14 +36,38 @@ class Node(object):
             return self.f.to_string(self.children)
         except AttributeError:
             return '{.f.func_name}({})'.format(self, ', '.join(map(str, self.children)))
+        
+    def __contains__(self, input_):
+        return any(
+            child.f == input_ or input_ in child
+            for child in self.children
+            if isinstance(child, Node)
+        )
+    
+    @property
+    def _contains_input(self):
+        return isinstance(self.f, Input) or any(
+            child._contains_input
+            for child in 
+            self.children
+        )
+        
+    def __call__(self, input_registry=_REGISTERED_INPUTS, **kwargs):
+        """Allow node to be called like a function, setting inputs."""
+        for k, v in kwargs.items():
+            _REGISTERED_INPUTS[k].set_value(v)
+        return self.evaluate()
 
 
 class Input(object):
-    def __init__(self, value, name):
+    def __init__(self, value, name, registry=_REGISTERED_INPUTS):
         self.value = value
         self.func_name = name
-    def set(self, value):
+        registry[name] = self
+        
+    def set_value(self, value):
         self.value = value
+        
     def __call__(self):
         return self.value
 
@@ -128,71 +155,3 @@ def crossover(first_tree, second_tree=None):
     if second_tree is None:
         return first_tree
     return first_tree if first_tree_info is receiving_tree_info else second_tree
-
-
-def tournament_select(trees, scoring_fn, selection_size, requires_population=False, cov_parsimony=True, random_parsimony=False, random_parsimony_prob=0.125):
-    _scoring_fn = scoring_fn(trees) if requires_population else scoring_fn
-
-    avg_size = 0
-    sizes = {}
-    
-    if cov_parsimony or random_parsimony:
-        sizes = {tree: get_tree_info(tree).num_nodes for tree in trees}
-        avg_size = sum(sizes.itervalues()) / float(len(sizes))
-    
-    if random_parsimony:
-        # Poli 2003:
-        scores = collections.defaultdict(lambda: float('-inf'))
-        scores.update({
-            tree: _scoring_fn(tree)
-            for tree in trees
-            if sizes[tree] <= avg_size or random_parsimony_prob < random.random() 
-        })
-    else:
-        scores = {tree: _scoring_fn(tree) for tree in trees}
-
-    if cov_parsimony:
-        # Poli & McPhee 2008:
-        covariance_matrix = numpy.cov(numpy.array([(sizes[tree], scores[tree]) for tree in trees]).T)
-        size_variance = numpy.var([sizes[tree] for tree in trees])
-        c = -(covariance_matrix / size_variance)[0, 1]  # 0, 1 should be correlation... is this the wrong way around?
-        scores = {tree: score - c * sizes[tree] for tree, score in scores.iteritems()}
-
-    # pseudo-pareto:
-    non_neg_inf_scores = [s for s in scores.itervalues() if s != float('-inf')]
-    avg_score = sum(non_neg_inf_scores) / float(len(non_neg_inf_scores))
-    scores = {
-        tree: float('-inf') if score < avg_score and sizes.get(tree, 0) > avg_size else score
-        for tree, score in scores.iteritems() 
-    }
-
-    while True:
-        tree = max(random.sample(trees, selection_size), key=scores.get)
-        if scores[tree] == float('-inf'):
-            continue
-        yield copy.deepcopy(tree)
-
-
-def next_generation(trees, scoring_fn, select_fn=functools.partial(tournament_select, selection_size=10), crossover_rate=0.90, mutation_rate=0.01):
-    selector = select_fn(trees, scoring_fn)
-    pop_size = len(trees)
-    
-    new_pop = []
-    for __ in xrange(pop_size):
-        if random.random() <= crossover_rate:
-            for __ in xrange(99999):
-                try:
-                    new_pop.append(crossover(next(selector), next(selector)))
-                    break
-                except UnsatisfiableType:
-                    pass
-            else:
-                raise UnsatisfiableType("Trees are not compatible.")
-
-        elif random.random() <= mutation_rate / (1 - crossover_rate):
-            new_pop.append(mutate(next(selector)))
-
-        else:
-            new_pop.append(next(selector))
-
-    return new_pop

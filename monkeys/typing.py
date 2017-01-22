@@ -1,3 +1,4 @@
+import functools
 import collections
 
 
@@ -137,3 +138,16 @@ def __type_annotations_factory():
 
 
 rtype, params, constant, lookup_rtype = __type_annotations_factory()
+
+
+def ignore(failure_value, *exceptions):
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except exceptions:
+                return failure_value
+        return wrapper
+    return decorator
+
