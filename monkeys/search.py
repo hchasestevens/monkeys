@@ -1,8 +1,10 @@
 """Search functionality and objective function tooling."""
 
+import ast
 import sys
 import copy
 import random
+import inspect
 import functools
 import contextlib
 import collections
@@ -75,21 +77,107 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
         
         
 def pre_evaluate(scoring_fn):
+    """
+    Evaluate trees before passing to the scoring function.
+    """
     @functools.wraps(scoring_fn)
     def wrapper(tree):
         try:
             evaluated_tree = tree.evaluate()
         except Exception:
+            print tree
+            print type(tree)
+            raise
             return -sys.maxsize
         return scoring_fn(evaluated_tree)
     return wrapper
 
 
 def minimize(scoring_fn):
+    """Minimize score."""
     @functools.wraps(scoring_fn)
     def wrapper(tree):
         return -scoring_fn(tree)
     return wrapper
+
+
+class AssertionReplacer(ast.NodeTransformer):
+    """Transformer used in score_on_assertions."""
+    
+    def __init__(self, score_var_name):
+        self.score_var_name = score_var_name
+        self.max_score = 0
+        
+    def visit_Assert(self, node):
+        """Replace assertions with augmented assignments."""
+        self.max_score += 1
+        return ast.AugAssign(
+            op=ast.Add(),
+            target=ast.Name(
+                id=self.score_var_name,
+                ctx=ast.Store()
+            ),
+            value=ast.Call(
+                args=[node.test],
+                func=ast.Name(
+                    id='bool',
+                    ctx=ast.Load()
+                ),
+                keywords=[],
+                kwargs=None,
+                starargs=None
+            )
+        )
+
+
+def assertions_as_score(scoring_fn):
+    """
+    Create a scoring function from a multi-assert test, allotting
+    one point per successful assertion.
+    
+    Nota bene: if used in conjunction with other decorators, must
+    be the first decorator applied to the function.
+    """
+    score_var_name = '__score__'
+    
+    function_source = inspect.getsource(scoring_fn)
+        
+    fn_ast, = ast.parse(function_source).body
+    fn_ast.body.insert(
+        0,
+        ast.Assign(
+            targets=[ast.Name(
+                id=score_var_name,
+                ctx=ast.Store()
+            )],
+            value=ast.Num(n=0)
+        )
+    )
+    fn_ast.body.append(
+        ast.Return(
+            value=ast.Name(
+                id=score_var_name,
+                ctx=ast.Load()
+            )
+        )
+    )
+    fn_ast.decorator_list = []
+    assertion_replacer = AssertionReplacer(score_var_name)
+    fn_ast = assertion_replacer.visit(fn_ast)
+    
+    code = compile(
+        ast.fix_missing_locations(
+            ast.Module(body=[fn_ast])
+        ), 
+        '<string>', 
+        'exec'
+    )
+    context = {}
+    exec(code, scoring_fn.__globals__, context)
+    new_scoring_fn, = context.values()
+    new_scoring_fn.__max_score = assertion_replacer.max_score
+    
+    return functools.wraps(scoring_fn)(new_scoring_fn)
 
 
 def next_generation(trees, scoring_fn, select_fn=functools.partial(tournament_select, selection_size=25), crossover_rate=0.80, mutation_rate=0.01, score_callback=None):
@@ -172,6 +260,7 @@ def optimize(scoring_function, population_size=250, iterations=25, build_tree=bu
                 )
             )
     best_tree = [random.choice(population)]
+    early_stop = []
     
     def score_callback(iteration, scores):
         if not show_scores:
@@ -197,12 +286,17 @@ def optimize(scoring_function, population_size=250, iterations=25, build_tree=bu
             average_score,
         )
         sys.stdout.flush()
+        
+        if best_score == getattr(scoring_function, '__max_score', None):
+            early_stop.append(True)
     
     print "Optimizing..."
     with recursion_limit(600):
         for iteration in xrange(iterations):
             callback = functools.partial(score_callback, iteration)
             population = next_generation(population, scoring_function, score_callback=callback)
+            if early_stop:
+                break
         
     best_tree = max(best_tree, key=scoring_function)
     return best_tree
