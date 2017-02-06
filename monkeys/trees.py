@@ -6,26 +6,48 @@ import functools
 import numpy
 
 from monkeys.typing import lookup_rtype, rtype, params, prettify_converted_type
+from monkeys.exceptions import UnsatisfiableType, TreeConstructionError
 
 
 _REGISTERED_INPUTS = {}
 
 
-class UnsatisfiableType(Exception):
-    """Raised when a type constraint cannot be satisfied."""
-    pass
-
-
 class Node(object):
-    def __init__(self, f, allowed_functions=None):
+    def __init__(self, f, allowed_functions=None, selection_strategy=None):
         self.f = f
         self.rtype = f.rtype
+        
         allowed_children = self.f.allowed_children()
         if allowed_functions is not None:
-            allowed_children = [[child for child in child_list if child in allowed_functions] for child_list in allowed_children]
+            allowed_children = [
+                [child for child in child_list if child in allowed_functions] 
+                for child_list in 
+                allowed_children
+            ]
         if not all(allowed_children):
-            raise UnsatisfiableType("{} has a parameter that cannot be satisfied.".format(self.f.func_name))
-        self.children = [Node(random.choice(child_list)) for child_list in allowed_children]
+            raise UnsatisfiableType(
+                "{} has a parameter that cannot be satisfied.".format(self.f.func_name)
+            )
+        if selection_strategy is not None:
+            child_choices = selection_strategy.choice(
+                parent=self.f,
+                children=allowed_children,
+            )
+        else:
+            child_choices = (
+                random.choice(child_list) 
+                for child_list in 
+                allowed_children
+            )
+        self.children = [
+            Node(
+                choice,
+                allowed_functions=allowed_functions,
+                selection_strategy=selection_strategy,
+            ) 
+            for choice in 
+            child_choices
+        ]
         self.num_children = len(self.children)
 
     def evaluate(self):
@@ -90,41 +112,61 @@ def find_functions(return_type, allowed_functions=None, convert=True):
     return list(allowable)
 
 
-def build_tree(return_type, allowed_functions=None, convert=True):
+def build_tree(return_type, allowed_functions=None, convert=True, selection_strategy=None):
     if allowed_functions is not None:
         allowed_functions = frozenset(allowed_functions)
     starting_functions = find_functions(return_type, allowed_functions, convert)
     for __ in xrange(99999):
         try:
-            return Node(random.choice(starting_functions), allowed_functions)
+            return Node(
+                random.choice(starting_functions), 
+                allowed_functions=allowed_functions,
+                selection_strategy=selection_strategy,
+            )
         except RuntimeError:
             pass
-    raise RuntimeError("Unable to construct program, consider raising recursion depth limit.")
+    raise TreeConstructionError(
+        "Unable to construct program, consider raising recursion depth limit."
+    )
 
 
 CategorizedNode = collections.namedtuple('CategorizedNode', 'node parent index')
-TreeInfo = collections.namedtuple('TreeInfo', 'nodes_by_rtype depth num_nodes inputs')
+GraphEdge = collections.namedtuple('GraphEdge', 'parent children')
+TreeInfo = collections.namedtuple(
+    'TreeInfo', 
+    'nodes_by_rtype depth num_nodes inputs graph_edges'
+)
 
 def get_tree_info(tree):
+    """Return information about tree structure."""
     frontier = [tree]
     nodes_by_rtype = collections.defaultdict(list)
     depth = 1
     inputs = set()
+    graph_edges = []
     while frontier:
         depth += 1
         new_frontier = []
         for node in frontier:
             if not node.children and isinstance(node.f, Input):
                 inputs.add(node.f)
+            elif node.children:
+                graph_edges.append(GraphEdge(
+                    parent=node.f,
+                    children=tuple(child.f for child in node.children)
+                ))
             for i, child in enumerate(node.children):
-                nodes_by_rtype[child.rtype].append(CategorizedNode(node=child, parent=node, index=i))
+                nodes_by_rtype[child.rtype].append(
+                    CategorizedNode(node=child, parent=node, index=i)
+                )
                 new_frontier.append(child)
         frontier = new_frontier
     return TreeInfo(
         nodes_by_rtype=nodes_by_rtype,
         depth=depth,
-        num_nodes=sum(len(v) for v in nodes_by_rtype.itervalues()),
-        inputs=frozenset(inputs)
+        num_nodes=sum(len(v) for v in nodes_by_rtype.values()),
+        inputs=frozenset(inputs),
+        graph_edges=graph_edges,
     )
 
 

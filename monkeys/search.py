@@ -9,7 +9,8 @@ import collections
 
 import numpy
 
-from monkeys.trees import get_tree_info, UnsatisfiableType, build_tree, crossover, mutate
+from monkeys.trees import get_tree_info, build_tree, crossover, mutate
+from monkeys.exceptions import UnsatisfiableType
 
 
 def tournament_select(trees, scoring_fn, selection_size, requires_population=False, cov_parsimony=False, random_parsimony=True, random_parsimony_prob=0.33, score_callback=None):

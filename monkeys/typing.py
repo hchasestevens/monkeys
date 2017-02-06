@@ -86,6 +86,7 @@ def __type_annotations_factory():
         """
         if hasattr(f, 'rtype') and hasattr(f, '__params'):
             register_first_class_function(f)
+            return True
 
     def allowed_children_factory(param_types):
         """
@@ -133,11 +134,19 @@ def __type_annotations_factory():
     def lookup_rtype(return_type, convert=True):
         """Find functions and constants of the given return type."""
         return RTYPES[(convert_type if convert else __id)(return_type)]
+    
+    def deregister(fn):
+        """Remove function from usage."""
+        for fn_list in RTYPES.values():
+            try:
+                fn_list.remove(fn)
+            except ValueError:
+                continue
 
-    return rtype, params, constant, lookup_rtype
+    return rtype, params, constant, lookup_rtype, deregister
 
 
-rtype, params, constant, lookup_rtype = __type_annotations_factory()
+rtype, params, constant, lookup_rtype, deregister = __type_annotations_factory()
 
 
 def ignore(failure_value, *exceptions):
