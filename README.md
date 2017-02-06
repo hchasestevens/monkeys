@@ -3,6 +3,8 @@
 
 `monkeys` is a framework designed to make genetic programming in Python accessible, quick, and flexible.
 
+[Get started here.](examples/notebooks/Getting%20started%20with%20monkeys.ipynb)
+
 
 ## What is genetic programming?
 
