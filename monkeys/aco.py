@@ -65,7 +65,7 @@ class AntColony(object):
             if allowed_children is None:
                 continue
             for combination in itertools.product(*allowed_children):
-                self._pheromone[function][combination][DEFAULT_PHEROMONE_TYPE] = 1.0
+                self._pheromone[function][combination][DEFAULT_PHEROMONE_TYPE] = initial_default_pheromone
 
     @staticmethod
     def _roulette_select_children(
