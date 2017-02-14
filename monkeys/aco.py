@@ -2,6 +2,7 @@ from __future__ import division
 
 import random
 import itertools
+from contextlib import contextmanager
 from collections import defaultdict
 
 from monkeys.trees import get_tree_info
@@ -20,7 +21,7 @@ class PheromoneConcentrations(defaultdict):
     """Defaultdict dispatching value returned on pheromone type."""
     
     def __init__(self, default_value, value_otherwise):
-        self.value_on_default = value_on_default
+        self.value_on_default = default_value
         super(PheromoneConcentrations, self).__init__(value_otherwise)
         
     def __missing__(self, key):
@@ -55,7 +56,7 @@ class AntColony(object):
         self._pheromone = defaultdict(
             lambda: defaultdict(
                 lambda: PheromoneConcentrations(
-                    value_on_default=default_pheromone(initial_default_pheromone),
+                    default_value=default_pheromone(initial_default_pheromone),
                     value_otherwise=default_pheromone(initial_other_pheromone),
                 )
             )
@@ -78,7 +79,7 @@ class AntColony(object):
         for the specified function.
         """
         pheromone = pheromone_distribution  # {(children): {pheromone_type: pheromone}}
-        if allowed_combinations is not None:
+        if child_constraints is not None:
             pheromone = {
                 k: v
                 for k, v in
@@ -111,14 +112,14 @@ class AntColony(object):
 
         return child_combination
     
-    def choice(self, parent, pheromone_type=DEFAULT_PHEROMONE_TYPE, child_selections=None):
+    def select(self, parent, pheromone_type=DEFAULT_PHEROMONE_TYPE, children=None):
         """
         Choose children for parent from given child selections.
         """
         return self._roulette_select_children(
             pheromone_distribution=self._pheromone[parent],
             pheromone_type=pheromone_type,
-            child_constraints=child_selections,
+            child_constraints=children,
         )
 
     def deposit(self, fitnesses, pheromone_type=DEFAULT_PHEROMONE_TYPE):
@@ -130,7 +131,7 @@ class AntColony(object):
         edge_distances = defaultdict(list)
         for tree, fitness in _items(fitnesses):
             tree_info = get_tree_info(tree)
-            distance = (1 - fitness) * tree_info.num_nodes
+            distance = (2 - fitness) * tree_info.num_nodes  # max deposit of 1
             for edge in tree_info.graph_edges:
                 edge_distances[edge].append(distance)
 
@@ -146,6 +147,14 @@ class AntColony(object):
                 for pheromone_type in concentrations:
                     concentrations[pheromone_type] *= 1 - self._evaporation_rate
         self._iteration += 1
+        
+    @contextmanager
+    def iteration(self):
+        """Ensure end-of-context evaporation is performed."""
+        try:
+            yield
+        finally:
+            self.evaporate()
 
     def __iter__(self):
         for parent, edges in _items(self._pheromone):

@@ -159,4 +159,3 @@ def ignore(failure_value, *exceptions):
                 return failure_value
         return wrapper
     return decorator
-

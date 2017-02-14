@@ -2,9 +2,9 @@ from setuptools import setup
  
 setup(
     name = 'monkeys',
-    packages = ['monkeys'],
-    version = '0.0.5',
-    description = 'A genetic programming framework',
+    packages = ['monkeys', 'monkeys.tools'],
+    version = '0.0.6',
+    description = 'A strongly-typed genetic programming framework',
     license='MIT',
     author='H. Chase Stevens',
     author_email='chase@chasestevens.com',

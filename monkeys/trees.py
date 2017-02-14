@@ -29,7 +29,7 @@ class Node(object):
                 "{} has a parameter that cannot be satisfied.".format(self.f.func_name)
             )
         if selection_strategy is not None:
-            child_choices = selection_strategy.choice(
+            child_choices = selection_strategy(
                 parent=self.f,
                 children=allowed_children,
             )

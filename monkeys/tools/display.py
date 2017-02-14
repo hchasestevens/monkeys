@@ -1,6 +1,4 @@
-"""
-Visualization tooling.
-"""
+"""Visualization tooling."""
 
 import itertools
 from collections import defaultdict
@@ -99,4 +97,3 @@ def node_graph(node):
         graph.edge(parent, node_num)
         frontier.extend((node_num, child) for child in node.children)
     return graph
-    
