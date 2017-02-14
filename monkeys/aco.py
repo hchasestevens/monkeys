@@ -17,6 +17,8 @@ def _items(x):
 
 
 class PheromoneConcentrations(defaultdict):
+    """Defaultdict dispatching value returned on pheromone type."""
+    
     def __init__(self, default_value, value_otherwise):
         self.value_on_default = value_on_default
         super(PheromoneConcentrations, self).__init__(value_otherwise)
@@ -32,7 +34,13 @@ class AntColony(object):
 
     DEFAULT_EVAPORATION_RATE = 1 / 20
 
-    def __init__(self, rtypes, evaporation_rate=DEFAULT_EVAPORATION_RATE):
+    def __init__(
+        self, 
+        rtypes, 
+        evaporation_rate=DEFAULT_EVAPORATION_RATE, 
+        initial_default_pheromone=1.0,
+        initial_other_pheromone=0.0
+    ):
         registered_functions = frozenset(
             function
             for rtype, functions in _items(rtypes)
@@ -42,11 +50,13 @@ class AntColony(object):
         self._evaporation_rate = evaporation_rate
         self._iteration = 0
         
+        default_pheromone = lambda init: lambda: init * (1 - evaporation_rate) ** self._iteration
+               
         self._pheromone = defaultdict(
             lambda: defaultdict(
                 lambda: PheromoneConcentrations(
-                    value_on_default=lambda: 1 * (1 - evaporation_rate) ** self._iteration,
-                    value_otherwise=float,
+                    value_on_default=default_pheromone(initial_default_pheromone),
+                    value_otherwise=default_pheromone(initial_other_pheromone),
                 )
             )
         )  # {parent: {(children): {pheromone_type: pheromone}}}
@@ -59,10 +69,10 @@ class AntColony(object):
 
     @staticmethod
     def _roulette_select_children(
-            pheromone_distribution, 
-            pheromone_type=DEFAULT_PHEROMONE_TYPE, 
-            child_constraints=None
-        ):
+        pheromone_distribution, 
+        pheromone_type=DEFAULT_PHEROMONE_TYPE, 
+        child_constraints=None
+    ):
         """
         Using roulette wheel selection, return a combination of children
         for the specified function.
@@ -111,7 +121,7 @@ class AntColony(object):
             child_constraints=child_selections,
         )
 
-    def update(self, fitnesses, pheromone_type=DEFAULT_PHEROMONE_TYPE):
+    def deposit(self, fitnesses, pheromone_type=DEFAULT_PHEROMONE_TYPE):
         """
         Perform ACO-like update of transition probabilities, given a mapping 
         from trees to fitnesses. Fitnesses are expected to be within the 
@@ -124,35 +134,18 @@ class AntColony(object):
             for edge in tree_info.graph_edges:
                 edge_distances[edge].append(distance)
 
-        # To be adapted still:
-        new_rules = set(rule_distances)
-        for node in self._productions.keys():
-            productions = self._productions[node]
-            for weighted_production in productions:
-                pheromone, production = weighted_production
-
-                new_pheromone = sum(
-                    1 / distance 
-                    for distance in 
-                    rule_distances[(node, production)]
-                )
-                if new_pheromone and (node, production) in new_rules:
-                    new_rules.remove((node, production))
-
-                old_pheromone = (1 - self._evaporation_rate) * pheromone
-
-                weighted_production[0] = old_pheromone + new_pheromone  # N.B. we are expecting a mutable data structure
-
-        for node, production in new_rules:
-            pheromone = sum(
-                1 / distance
-                for distance in
-                rule_distances[(node, production)]
-            )
-            self._productions[node].append([pheromone, production])
-
-        for node in self._productions.keys():
-            self._productions[node] = sorted(self._productions[node], reverse=True)
+        for parent, edges in _items(self._pheromone):
+            for child_combination, concentrations in _items(edges):
+                for distance in edge_distances[parent, child_combination]:
+                    concentrations[pheromone_type] += 1 / distance
+                    
+    def evaporate(self):
+        """Perform ACO-like end-of-iteration evaporation of pheromone."""
+        for parent, edges in _items(self._pheromone):
+            for child_combination, concentrations in _items(edges):
+                for pheromone_type in concentrations:
+                    concentrations[pheromone_type] *= 1 - self._evaporation_rate
+        self._iteration += 1
 
     def __iter__(self):
         for parent, edges in _items(self._pheromone):
