@@ -1,6 +1,7 @@
 """Tools for diagnosing errors."""
 
 import functools
+import operator
 from collections import defaultdict, OrderedDict
 
 from monkeys.typing import REGISTERED_TYPES, lookup_rtype
@@ -37,7 +38,7 @@ class Diagnosis(object):
         self.edge_weightings = {
             exception: OrderedDict(sorted(
                 weightings.items(),
-                key=lambda (edge, weight): weight,
+                key=operator.itemgetter(2),
                 reverse=True
             ))
             for exception, weightings in
@@ -68,7 +69,7 @@ def diagnose(target_type, test=None, sample_size=250):
         test = lambda x: None
     
     encountered_exceptions = defaultdict(list)
-    print "Collecting exception sample..."
+    print("Collecting exception sample...")
     with colony.iteration():
         for __ in xrange(sample_size):
             tree = build_tree(target_type)
@@ -85,9 +86,9 @@ def diagnose(target_type, test=None, sample_size=250):
         error_message = "Could not find any exceptions after {} trials."
         raise UnsatisfiableConstraint(error_message.format(sample_size))
         
-    print "Discovered {} distinct exceptions.".format(len(encountered_exceptions))
+    print("Discovered {} distinct exceptions.".format(len(encountered_exceptions)))
     
-    print "Reproducing exceptions..."
+    print("Reproducing exceptions...")
     for __ in xrange(sample_size):
         with colony.iteration():
             for exception in encountered_exceptions:
@@ -118,6 +119,6 @@ def diagnose(target_type, test=None, sample_size=250):
         exceptions=encountered_exceptions,
         ant_colony=colony
     )
-    print "Done."
+    print("Done.")
     return diagnosis
     

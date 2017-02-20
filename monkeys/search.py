@@ -85,9 +85,6 @@ def pre_evaluate(scoring_fn):
         try:
             evaluated_tree = tree.evaluate()
         except Exception:
-            print tree
-            print type(tree)
-            raise
             return -sys.maxsize
         return scoring_fn(evaluated_tree)
     return wrapper
@@ -245,7 +242,7 @@ def build_tree_to_requirements(scoring_function):
     
 
 def optimize(scoring_function, population_size=250, iterations=25, build_tree=build_tree, next_generation=next_generation, show_scores=True):  
-    print "Creating initial population of {}.".format(population_size)
+    print("Creating initial population of {}.".format(population_size))
     sys.stdout.flush()
     
     population = []
@@ -280,17 +277,17 @@ def optimize(scoring_function, population_size=250, iterations=25, build_tree=bu
         
         best_tree.append(max(scores, key=scores.get))
         
-        print "Iteration {}:\tBest: {:.2f}\tAverage: {:.2f}".format(
+        print("Iteration {}:\tBest: {:.2f}\tAverage: {:.2f}".format(
             iteration + 1,
             best_score,
             average_score,
-        )
+        ))
         sys.stdout.flush()
         
         if best_score == getattr(scoring_function, '__max_score', None):
             early_stop.append(True)
     
-    print "Optimizing..."
+    print("Optimizing...")
     with recursion_limit(600):
         for iteration in xrange(iterations):
             callback = functools.partial(score_callback, iteration)
