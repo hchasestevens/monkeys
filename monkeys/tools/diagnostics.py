@@ -28,7 +28,7 @@ class Diagnosis(object):
                 key=lambda t: get_tree_info(t).num_nodes
             )
             for exception, trees in
-            exceptions.items()
+            iteritems(exceptions)
         }
         
         edge_weightings = defaultdict(dict)  # {exception: {edge: weight}}
