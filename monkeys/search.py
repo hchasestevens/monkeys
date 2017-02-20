@@ -1,5 +1,7 @@
 """Search functionality and objective function tooling."""
 
+from __future__ import print_function
+
 import ast
 import sys
 import copy
@@ -10,6 +12,8 @@ import contextlib
 import collections
 
 import numpy
+from six import iteritems, itervalues
+from past.builtins import xrange
 
 from monkeys.trees import get_tree_info, build_tree, crossover, mutate
 from monkeys.exceptions import UnsatisfiableType
@@ -23,7 +27,7 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
     
     if cov_parsimony or random_parsimony:
         sizes = {tree: get_tree_info(tree).num_nodes for tree in trees}
-        avg_size = sum(sizes.itervalues()) / float(len(sizes))
+        avg_size = sum(itervalues(sizes)) / float(len(sizes))
     
     if random_parsimony:
         # Poli 2003:
@@ -41,17 +45,17 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
         covariance_matrix = numpy.cov(numpy.array([(sizes[tree], scores[tree]) for tree in trees]).T)
         size_variance = numpy.var([sizes[tree] for tree in trees])
         c = -(covariance_matrix / size_variance)[0, 1]  # 0, 1 should be correlation... is this the wrong way around?
-        scores = {tree: score - c * sizes[tree] for tree, score in scores.iteritems()}
+        scores = {tree: score - c * sizes[tree] for tree, score in iteritems(scores)}
 
     # pseudo-pareto:
-    non_neg_inf_scores = [s for s in scores.itervalues() if s != -sys.maxsize]
+    non_neg_inf_scores = [s for s in itervalues(scores) if s != -sys.maxsize]
     try:
         avg_score = sum(non_neg_inf_scores) / float(len(non_neg_inf_scores))
     except ZeroDivisionError:
         avg_score = -sys.maxsize
     scores = {
         tree: -sys.maxsize if score < avg_score and sizes.get(tree, 0) > avg_size else score
-        for tree, score in scores.iteritems() 
+        for tree, score in iteritems(scores)
     }
     if callable(score_callback):
         score_callback(scores)

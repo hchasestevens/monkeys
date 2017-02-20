@@ -1,6 +1,8 @@
 import functools
 import collections
 
+from past.builtins import basestring
+
 
 REGISTERED_TYPES = set()
 _STRING_TYPE_MAPPINGS = {}

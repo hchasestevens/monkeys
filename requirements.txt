@@ -1,0 +1,5 @@
+astor==0.5
+graphviz==0.5.2
+numpy==1.12.0
+six==1.10.0
+future==0.16.0

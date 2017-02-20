@@ -1,8 +1,13 @@
 """Tools for diagnosing errors."""
 
+from __future__ import print_function
+
 import functools
 import operator
 from collections import defaultdict, OrderedDict
+
+from six import iteritems
+from past.builtins import xrange
 
 from monkeys.typing import REGISTERED_TYPES, lookup_rtype
 from monkeys.trees import build_tree, get_tree_info
@@ -48,8 +53,8 @@ class Diagnosis(object):
     def show_report(self, top=3):
         for exception in self.exceptions:
             print('{}:'.format(exception))
-            edge_weightings = self.edge_weightings[exception].iteritems()
-            for __, (edge, weight) in zip(range(top), edge_weightings):
+            edge_weightings = iteritems(self.edge_weightings[exception])
+            for __, (edge, weight) in zip(xrange(top), edge_weightings):
                 print('    {:.2f} | {}'.format(weight, edge))
             
 
@@ -71,7 +76,7 @@ def diagnose(target_type, test=None, sample_size=250):
     encountered_exceptions = defaultdict(list)
     print("Collecting exception sample...")
     with colony.iteration():
-        for __ in xrange(sample_size):
+        for __ in range(sample_size):
             tree = build_tree(target_type)
             try:
                 test(tree.evaluate())

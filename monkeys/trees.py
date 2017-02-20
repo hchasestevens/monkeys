@@ -1,9 +1,8 @@
 import random
 import collections
 import copy
-import functools
 
-import numpy
+from past.builtins import xrange
 
 from monkeys.typing import lookup_rtype, rtype, params, prettify_converted_type
 from monkeys.exceptions import UnsatisfiableType, TreeConstructionError

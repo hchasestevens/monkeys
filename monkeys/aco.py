@@ -5,16 +5,13 @@ import itertools
 from contextlib import contextmanager
 from collections import defaultdict
 
+from six import iteritems
+
 from monkeys.trees import get_tree_info
 from monkeys.exceptions import UnsatisfiableConstraint
 
 
 DEFAULT_PHEROMONE_TYPE = object()
-
-
-def _items(x):
-    """Py3k-compatible item method."""
-    return getattr(x, 'iteritems', x.items)()
 
 
 class PheromoneConcentrations(defaultdict):
@@ -44,7 +41,7 @@ class AntColony(object):
     ):
         registered_functions = frozenset(
             function
-            for rtype, functions in _items(rtypes)
+            for rtype, functions in iteritems(rtypes)
             for function in functions
         )
         
@@ -83,7 +80,7 @@ class AntColony(object):
             pheromone = {
                 k: v
                 for k, v in
-                _items(pheromone)
+                iteritems(pheromone)
                 if all(
                     child in allowed_children
                     for child, allowed_children in
@@ -105,7 +102,7 @@ class AntColony(object):
         )
 
         target = random.uniform(0, total)
-        for child_combination, concentrations in _items(pheromone):
+        for child_combination, concentrations in iteritems(pheromone):
             target -= concentrations[pheromone_type] / sum(concentrations.values())
             if target <= 0:
                 return child_combination
@@ -129,21 +126,21 @@ class AntColony(object):
         interval [0, 1], with 0 being least fit and 1 being most.
         """
         edge_distances = defaultdict(list)
-        for tree, fitness in _items(fitnesses):
+        for tree, fitness in iteritems(fitnesses):
             tree_info = get_tree_info(tree)
             distance = (2 - fitness) * tree_info.num_nodes  # max deposit of 1
             for edge in tree_info.graph_edges:
                 edge_distances[edge].append(distance)
 
-        for parent, edges in _items(self._pheromone):
-            for child_combination, concentrations in _items(edges):
+        for parent, edges in iteritems(self._pheromone):
+            for child_combination, concentrations in iteritems(edges):
                 for distance in edge_distances[parent, child_combination]:
                     concentrations[pheromone_type] += 1 / distance
                     
     def evaporate(self):
         """Perform ACO-like end-of-iteration evaporation of pheromone."""
-        for parent, edges in _items(self._pheromone):
-            for child_combination, concentrations in _items(edges):
+        for parent, edges in iteritems(self._pheromone):
+            for child_combination, concentrations in iteritems(edges):
                 for pheromone_type in concentrations:
                     concentrations[pheromone_type] *= 1 - self._evaporation_rate
         self._iteration += 1
@@ -157,8 +154,8 @@ class AntColony(object):
             self.evaporate()
 
     def __iter__(self):
-        for parent, edges in _items(self._pheromone):
-            for child_combination, concentrations in _items(edges):
-                for pheromone_type, concentration in _items(concentrations):
+        for parent, edges in iteritems(self._pheromone):
+            for child_combination, concentrations in iteritems(edges):
+                for pheromone_type, concentration in iteritems(concentrations):
                     yield parent, child_combination, pheromone_type, concentration
     
