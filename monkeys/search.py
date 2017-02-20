@@ -59,7 +59,6 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
     }
     if callable(score_callback):
         score_callback(scores)
-    all_failed = all(score == -sys.maxsize for score in scores.values())
 
     while True:
         tree = max(random.sample(trees, selection_size), key=scores.get)
@@ -72,7 +71,7 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
             try:
                 with recursion_limit(1500):
                     new_tree = copy.deepcopy(tree)
-            except RuntimeException:
+            except RuntimeError:
                 try:
                     new_tree = build_tree_to_requirements(scoring_fn)
                 except UnsatisfiableType:
