@@ -158,4 +158,3 @@ class AntColony(object):
             for child_combination, concentrations in iteritems(edges):
                 for pheromone_type, concentration in iteritems(concentrations):
                     yield parent, child_combination, pheromone_type, concentration
-    

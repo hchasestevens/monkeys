@@ -16,11 +16,11 @@ from monkeys.aco import AntColony, DEFAULT_PHEROMONE_TYPE
 
 
 class Diagnosis(object):
-    """Report of diagonstic results."""
+    """Report of diagnostic results."""
     
     def __init__(self, exceptions, ant_colony):
         self.exception_examples = exceptions
-        self.exceptions = exceptions.keys()
+        self.exceptions = list(exceptions.keys())
         
         self.minimal_reproductions = {
             exception: min(
@@ -42,12 +42,12 @@ class Diagnosis(object):
             edge_weightings[exception][pretty_edge] = concentration
         self.edge_weightings = {
             exception: OrderedDict(sorted(
-                weightings.items(),
-                key=operator.itemgetter(2),
+                iteritems(weightings),
+                key=operator.itemgetter(1),
                 reverse=True
             ))
             for exception, weightings in
-            edge_weightings.items()
+            iteritems(edge_weightings)
         }
         
     def show_report(self, top=3):
@@ -126,4 +126,3 @@ def diagnose(target_type, test=None, sample_size=250):
     )
     print("Done.")
     return diagnosis
-    
