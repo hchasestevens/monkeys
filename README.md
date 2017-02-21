@@ -40,6 +40,8 @@ specify how your programs should be structured. An introduction to the `monkeys`
 which outlines the type system. `monkeys` can also be used to generate Python code directly, see [**Monkeys in abstract syntax trees**](examples/notebooks/Monkeys%20in%20abstract%20syntax%20trees.ipynb). 
 A guide for discovering and diagnosing bugs in your codebase with `monkeys` can be found in [**Debugging with monkeys**](examples/notebooks/Debugging%20with%20monkeys.ipynb).
 
+`monkeys` supports Python 2.7 and 3.x.
+
 
 ## Contacts
 
