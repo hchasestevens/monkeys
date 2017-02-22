@@ -174,7 +174,7 @@ def mutate(tree, allowed_functions=None):
     if not treeinfo.num_nodes:
         return tree
     nodes_by_rtype = treeinfo.nodes_by_rtype
-    chosen_rtype = random.choice(nodes_by_rtype.keys())
+    chosen_rtype = random.choice(list(nodes_by_rtype.keys()))
     chosen_node = random.choice(nodes_by_rtype[chosen_rtype])
     chosen_node.parent.children[chosen_node.index] = build_tree(chosen_rtype, allowed_functions, convert=False)
     return tree

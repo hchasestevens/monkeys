@@ -61,8 +61,11 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
         score_callback(scores)
 
     while True:
-        tree = max(random.sample(trees, selection_size), key=scores.get)
-        if scores[tree] == -sys.maxsize:
+        tree = max(
+            random.sample(trees, selection_size),
+            key=lambda t: scores.get(t, -sys.maxsize)
+        )
+        if scores.get(tree, -sys.maxsize) == -sys.maxsize:
             try:
                 new_tree = build_tree_to_requirements(scoring_fn)
             except UnsatisfiableType:
