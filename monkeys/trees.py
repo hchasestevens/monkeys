@@ -25,7 +25,7 @@ class Node(object):
             ]
         if not all(allowed_children):
             raise UnsatisfiableType(
-                "{} has a parameter that cannot be satisfied.".format(self.f.func_name)
+                "{} has a parameter that cannot be satisfied.".format(self.f.__name__)
             )
         if selection_strategy is not None:
             child_choices = selection_strategy(
@@ -56,7 +56,7 @@ class Node(object):
         try:
             return self.f.to_string(self.children)
         except AttributeError:
-            return '{.f.func_name}({})'.format(self, ', '.join(map(str, self.children)))
+            return '{.f.__name__}({})'.format(self, ', '.join(map(str, self.children)))
         
     def __contains__(self, input_):
         return any(
@@ -83,7 +83,7 @@ class Node(object):
 class Input(object):
     def __init__(self, value, name, registry=_REGISTERED_INPUTS):
         self.value = value
-        self.func_name = name
+        self.__name__ = name
         registry[name] = self
         
     def set_value(self, value):

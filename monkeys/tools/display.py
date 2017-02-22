@@ -88,12 +88,12 @@ def node_graph(node):
     """Create a graph representing a node."""
     graph = graphviz.Graph()
     counter = itertools.count(1)
-    graph.node('0', label=str(node.f.func_name))
+    graph.node('0', label=str(node.f.__name__))
     frontier = [('0', child) for child in node.children]
     while frontier:
         parent, node = frontier.pop()
         node_num = str(next(counter))
-        graph.node(node_num, label=str(node.f.func_name))
+        graph.node(node_num, label=str(node.f.__name__))
         graph.edge(parent, node_num)
         frontier.extend((node_num, child) for child in node.children)
     return graph

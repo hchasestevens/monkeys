@@ -78,7 +78,7 @@ def __type_annotations_factory():
         @rtype((_func, f.__params, f.rtype), convert=False, first_class=False)
         def const_f():
             return f
-        const_f.func_name = '_FC_{}'.format(f.func_name)
+        const_f.__name__ = '_FC_{}'.format(f.__name__)
 
     def check_for_registration(f):
         """
@@ -130,7 +130,7 @@ def __type_annotations_factory():
         @rtype(return_type)
         def _const():
             return value
-        _const.func_name += '_' + str(value)
+        _const.__name__ += '_' + str(value)
         return value
 
     def lookup_rtype(return_type, convert=True):

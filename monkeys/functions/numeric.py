@@ -167,7 +167,7 @@ for if_type in if_types:
     @rtype(if_type)
     def _num_if(cond, first, second):
         return first if cond else second
-    _num_if.func_name += '_' + prettify_converted_type(convert_type(if_type))
+    _num_if.__name__ += '_' + prettify_converted_type(convert_type(if_type))
     num_ifs.append(_num_if)
 
 
