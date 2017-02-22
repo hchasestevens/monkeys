@@ -39,7 +39,13 @@ def quoted_template(fn):
     populate and return the specified template body.
     """
     fn_node = ast.parse(inspect.getsource(fn)).body[0]
-    argnames = [name.id for name in fn_node.args.args]
+    argnames = [
+        name.id
+        if hasattr(name, 'id')
+        else name.arg
+        for name in
+        fn_node.args.args
+    ]
         
     @functools.wraps(fn)
     def wrapper(*args):
