@@ -2,6 +2,7 @@ import functools
 import collections
 
 from past.builtins import basestring
+from six import iterkeys, itervalues
 
 
 REGISTERED_TYPES = set()
@@ -25,9 +26,17 @@ def convert_type(t):
     if not t:
         converted = None
     elif isinstance(t, collections.Mapping):
-        converted = (collections.Mapping, convert_type(next(t.iterkeys())), convert_type(next(t.itervalues())))
+        converted = (
+            collections.Mapping, 
+            convert_type(next(iterkeys(t))),
+            convert_type(next(itervalues(t))),
+        )
     elif isinstance(t, _func):
-        converted = (_func, tuple(map(convert_type, t.params)), convert_type(t.rtype))
+        converted = (
+            _func, 
+            tuple(map(convert_type, t.params)), 
+            convert_type(t.rtype)
+        )
     elif isinstance(t, basestring):
         try:
             converted = _STRING_TYPE_MAPPINGS[t]
