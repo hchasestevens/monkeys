@@ -141,6 +141,18 @@ def __type_annotations_factory():
             return value
         _const.__name__ += '_' + str(value)
         return value
+    
+    def free(target_type, source_type):
+        """Allow free one-way conversion from source type to target type."""
+        @params(source_type)
+        @rtype(target_type)
+        def _convert(x):
+            return x
+        _convert.__name__ += '_{src}_to_{tgt}'.format(
+            src=prettify_converted_type(convert_type(source_type)),
+            tgt=prettify_converted_type(convert_type(target_type)),
+        )
+        return _convert
 
     def lookup_rtype(return_type, convert=True):
         """Find functions and constants of the given return type."""
@@ -154,10 +166,10 @@ def __type_annotations_factory():
             except ValueError:
                 continue
 
-    return rtype, params, constant, lookup_rtype, deregister
+    return rtype, params, constant, free, lookup_rtype, deregister
 
 
-rtype, params, constant, lookup_rtype, deregister = __type_annotations_factory()
+rtype, params, constant, free, lookup_rtype, deregister = __type_annotations_factory()
 
 
 def ignore(failure_value, *exceptions):
