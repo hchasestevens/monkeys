@@ -12,6 +12,7 @@ import contextlib
 import collections
 
 import numpy
+import astpath
 from six import iteritems, itervalues
 from past.builtins import xrange
 
@@ -105,7 +106,7 @@ def minimize(scoring_fn):
 
 
 class AssertionReplacer(ast.NodeTransformer):
-    """Transformer used in score_on_assertions."""
+    """Transformer used in assertions_as_score."""
     
     def __init__(self, score_var_name):
         self.score_var_name = score_var_name
@@ -178,7 +179,23 @@ def assertions_as_score(scoring_fn):
     context = {}
     exec(code, scoring_fn.__globals__, context)
     new_scoring_fn, = context.values()
-    new_scoring_fn.__max_score = assertion_replacer.max_score
+    
+    # Assess whether max score can be determined:
+    xml_ast = astpath.file_contents_to_xml_ast(function_source)
+    invalidating_ancestors = {'While', 'For',}
+    invalidating_expressions = (
+        './/{}//Assert'.format(ancestor) 
+        for ancestor in
+        invalidating_ancestors
+    )
+    invalid = any(
+        astpath.find_in_ast(xml_ast, expr)
+        for expr in
+        invalidating_expressions
+    )
+    
+    if not invalid:
+        new_scoring_fn.__max_score = assertion_replacer.max_score
     
     return functools.wraps(scoring_fn)(new_scoring_fn)
 
