@@ -1,4 +1,5 @@
 astor==0.5
+astpath==0.6.1
 graphviz==0.5.2
 numpy==1.12.0
 six==1.10.0
