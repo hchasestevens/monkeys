@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='monkeys',
     packages=['monkeys', 'monkeys.tools'],
-    version='0.0.11',
+    version='0.0.12',
     description='A strongly-typed genetic programming framework',
     license='MIT',
     author='H. Chase Stevens',
