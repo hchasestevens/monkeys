@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import re
 import ast
 import sys
 import copy
@@ -145,6 +146,14 @@ def assertions_as_score(scoring_fn):
     score_var_name = '__score__'
     
     function_source = inspect.getsource(scoring_fn)
+    initial_indentation = re.search(r'^\s+', function_source)
+    if initial_indentation:
+        indentation = len(initial_indentation.group())
+        function_source = '\n'.join(
+            line[indentation:]
+            for line in
+            function_source.splitlines()
+        )
         
     fn_ast, = ast.parse(function_source).body
     fn_ast.body.insert(
@@ -182,7 +191,7 @@ def assertions_as_score(scoring_fn):
     
     # Assess whether max score can be determined:
     xml_ast = astpath.file_contents_to_xml_ast(function_source)
-    invalidating_ancestors = {'While', 'For',}
+    invalidating_ancestors = 'While', 'For'
     invalidating_expressions = (
         './/{}//Assert'.format(ancestor) 
         for ancestor in
