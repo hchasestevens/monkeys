@@ -46,7 +46,7 @@ specify how your programs should be structured.
 ### Tutorials:
 - [**Getting started with monkeys**](examples/notebooks/Getting%20started%20with%20monkeys.ipynb): An introduction to the `monkeys` framework, which outlines the type system. 
 - [**Monkeys in abstract syntax trees**](examples/notebooks/Monkeys%20in%20abstract%20syntax%20trees.ipynb): using `monkeys` to generate Python code directly.
-- [**Debugging with monkeys**](examples/notebooks/Debugging%20with%20monkeys.ipynb): A guide for discovering and diagnosing bugs in your codebase with `monkeys`
+- [**Debugging with monkeys**](examples/notebooks/Debugging%20with%20monkeys.ipynb): A guide for discovering and diagnosing bugs in your codebase with `monkeys`.
 
 ### Sample usages:
 - [**Linting by example**](examples/notebooks/Linting%20by%20example.ipynb): Generating linting rules by supplying positive/negative code examples.
