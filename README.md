@@ -36,11 +36,21 @@ pip install monkeys
 ```
 
 `monkeys` uses a variant of genetic programming called "strongly-typed genetic programming" in order to allow you to quickly and easily
-specify how your programs should be structured. An introduction to the `monkeys` framework is given in [**Getting started with monkeys**](examples/notebooks/Getting%20started%20with%20monkeys.ipynb), 
-which outlines the type system. `monkeys` can also be used to generate Python code directly, see [**Monkeys in abstract syntax trees**](examples/notebooks/Monkeys%20in%20abstract%20syntax%20trees.ipynb). 
-A guide for discovering and diagnosing bugs in your codebase with `monkeys` can be found in [**Debugging with monkeys**](examples/notebooks/Debugging%20with%20monkeys.ipynb).
+specify how your programs should be structured. 
 
 `monkeys` supports Python 2.7 and 3.x.
+
+
+## Examples 
+
+### Tutorials:
+- [**Getting started with monkeys**](examples/notebooks/Getting%20started%20with%20monkeys.ipynb): An introduction to the `monkeys` framework, which outlines the type system. 
+- [**Monkeys in abstract syntax trees**](examples/notebooks/Monkeys%20in%20abstract%20syntax%20trees.ipynb): using `monkeys` to generate Python code directly.
+- [**Debugging with monkeys**](examples/notebooks/Debugging%20with%20monkeys.ipynb): A guide for discovering and diagnosing bugs in your codebase with `monkeys`.
+
+### Sample usages:
+- [**Linting by example**](examples/notebooks/Linting%20by%20example.ipynb): Generating linting rules by supplying positive/negative code examples.
+- More to come!
 
 
 ## Contacts
