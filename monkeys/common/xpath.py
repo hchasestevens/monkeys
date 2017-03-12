@@ -7,7 +7,7 @@ class NodeName(object):
     """Specifies an available node name."""
 
     def __init__(self, node_name):
-        constant(NodeName, node_name)
+        self.constant = constant(NodeName, node_name)
 
 
 NodeName('*')
@@ -17,7 +17,7 @@ class Expression(object):
     """Represents an XPath expression."""
 
     def __init__(self, expression):
-        constant(Expression, expression)
+        self.constant = constant(Expression, expression)
 
 
 @params(NodeName)
@@ -48,7 +48,7 @@ class Axis(object):
     """One of the XPath standard axes."""
 
     def __init__(self, axis_name):
-        constant(Axis, axis_name)
+        self.constant = constant(Axis, axis_name)
 
 
 axes = (
@@ -131,7 +131,7 @@ class Number(object):
     """A number."""
 
     def __init__(self, n):
-        constant(Number, str(n))
+        self.constant = constant(Number, str(n))
 
 
 Number(1)
@@ -170,7 +170,7 @@ class AttributeName(object):
     """Name of an accessible attribute."""
 
     def __init__(self, attr_name):
-        constant(AttributeName, attr_name)
+        self.constant = constant(AttributeName, attr_name)
 
 
 AttributeName('id')
@@ -186,7 +186,7 @@ class AttributeValue(object):
     """Potential value of an attribute."""
     
     def __init__(self, attr_value):
-        constant(AttributeValue, attr_value)
+        self.constant = constant(AttributeValue, attr_value)
         
         
 AttributeValue('')
