@@ -58,7 +58,7 @@ class Diagnosis(object):
                 print('    {:.2f} | {}'.format(weight, edge))
             
 
-def diagnose(target_type, test=None, sample_size=250):
+def diagnose(target_type, test=None, sample_size=250, max_examples=10):
     """
     Identify and localize exceptions encountered when evaluating
     trees of the specified target type. If a test is supplied, this
@@ -94,6 +94,16 @@ def diagnose(target_type, test=None, sample_size=250):
     print("Discovered {} distinct exceptions.".format(len(encountered_exceptions)))
     
     print("Reproducing exceptions...")
+    size_cache = {}
+    def cached_size(tree):
+        tree_id = id(tree)
+        try:
+            return size_cache[tree_id]
+        except KeyError:
+            size = get_tree_info(tree).num_nodes
+            size_cache[tree_id] = size
+            return size
+        
     for __ in xrange(sample_size):
         with colony.iteration():
             for exception in encountered_exceptions:
@@ -118,6 +128,10 @@ def diagnose(target_type, test=None, sample_size=250):
                     )
                     continue
                 encountered_exceptions[exception].append(tree)
+                encountered_exceptions[exception] = sorted(
+                    encountered_exceptions[exception],
+                    key=cached_size
+                )[:max_examples]
                 colony.deposit({tree: 1.0}, pheromone_type=exception)
                     
     diagnosis = Diagnosis(
