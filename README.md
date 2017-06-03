@@ -50,6 +50,7 @@ specify how your programs should be structured.
 
 ### Sample usages:
 - [**Linting by example**](examples/notebooks/Linting%20by%20example.ipynb): Generating linting rules by supplying positive/negative code examples.
+- [**Solving logic puzzles with monkeys**](examples/notebooks/Solving%20logic%20puzzles%20with%20monkeys.ipynb): Solving logic puzzles using the `monkeys` diagnostic tool.
 - More to come!
 
 
