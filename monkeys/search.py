@@ -21,18 +21,37 @@ from monkeys.trees import get_tree_info, build_tree, crossover, mutate
 from monkeys.exceptions import UnsatisfiableType
 
 
-def tournament_select(trees, scoring_fn, selection_size, requires_population=False, cov_parsimony=False, random_parsimony=True, random_parsimony_prob=0.33, score_callback=None):
+class Optimizations(object):
+    COVARIANT_PARSIMONY = object()  # Poli & McPhee 2008
+    RANDOM_PARSIMONY = object()  # Poli 2003
+    PSEUDO_PARETO = object()  # Engelbrecht 2002
+
+
+DEFAULT_OPTIMIZATIONS = {
+    Optimizations.PSEUDO_PARETO,
+}
+
+
+def tournament_select(trees, scoring_fn, selection_size, requires_population=False, optimizations=DEFAULT_OPTIMIZATIONS, random_parsimony_prob=0.33, score_callback=None):
+    """
+    Perform tournament selection on population of trees, using the specified
+    objective function for comparison, and conducting tournaments of the
+    specified selection size.
+    """
     _scoring_fn = scoring_fn(trees) if requires_population else scoring_fn
 
     avg_size = 0
     sizes = {}
+
+    using_covariant_parsimony = Optimizations.COVARIANT_PARSIMONY in optimizations
+    using_random_parsimony = Optimizations.RANDOM_PARSIMONY in optimizations
+    using_pseudo_pareto = Optimizations.PSEUDO_PARETO in optimizations
     
-    if cov_parsimony or random_parsimony:
+    if using_covariant_parsimony or using_random_parsimony:
         sizes = {tree: get_tree_info(tree).num_nodes for tree in trees}
         avg_size = sum(itervalues(sizes)) / float(len(sizes))
     
-    if random_parsimony:
-        # Poli 2003:
+    if using_random_parsimony:
         scores = collections.defaultdict(lambda: -sys.maxsize)
         scores.update({
             tree: _scoring_fn(tree)
@@ -42,23 +61,23 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
     else:
         scores = {tree: _scoring_fn(tree) for tree in trees}
 
-    if cov_parsimony:
-        # Poli & McPhee 2008:
+    if using_covariant_parsimony:
         covariance_matrix = numpy.cov(numpy.array([(sizes[tree], scores[tree]) for tree in trees]).T)
         size_variance = numpy.var([sizes[tree] for tree in trees])
         c = -(covariance_matrix / size_variance)[0, 1]  # 0, 1 should be correlation... is this the wrong way around?
         scores = {tree: score - c * sizes[tree] for tree, score in iteritems(scores)}
 
-    # pseudo-pareto:
-    non_neg_inf_scores = [s for s in itervalues(scores) if s != -sys.maxsize]
-    try:
-        avg_score = sum(non_neg_inf_scores) / float(len(non_neg_inf_scores))
-    except ZeroDivisionError:
-        avg_score = -sys.maxsize
-    scores = {
-        tree: -sys.maxsize if score < avg_score and sizes.get(tree, 0) > avg_size else score
-        for tree, score in iteritems(scores)
-    }
+    if using_pseudo_pareto:
+        non_neg_inf_scores = [s for s in itervalues(scores) if s != -sys.maxsize]
+        try:
+            avg_score = sum(non_neg_inf_scores) / float(len(non_neg_inf_scores))
+        except ZeroDivisionError:
+            avg_score = -sys.maxsize
+        scores = {
+            tree: -sys.maxsize if score < avg_score and sizes.get(tree, 0) > avg_size else score
+            for tree, score in iteritems(scores)
+        }
+
     if callable(score_callback):
         score_callback(scores)
 
@@ -82,6 +101,9 @@ def tournament_select(trees, scoring_fn, selection_size, requires_population=Fal
                 except UnsatisfiableType:
                     continue
         yield new_tree
+
+
+DEFAULT_TOURNAMENT_SELECT = functools.partial(tournament_select, selection_size=25)
         
         
 def pre_evaluate(scoring_fn):
@@ -209,8 +231,36 @@ def assertions_as_score(scoring_fn):
     return functools.wraps(scoring_fn)(new_scoring_fn)
 
 
-def next_generation(trees, scoring_fn, select_fn=functools.partial(tournament_select, selection_size=25), crossover_rate=0.80, mutation_rate=0.01, score_callback=None):
-    selector = select_fn(trees, scoring_fn, score_callback=score_callback)
+def build_tree_to_requirements(scoring_function, build_tree=build_tree):
+    params = getattr(scoring_function, '__params', ())
+    if len(params) != 1:
+        raise ValueError("Scoring function must accept a single parameter.")
+    return_type, = params
+
+    for __ in xrange(9999):
+        with recursion_limit(500):
+            tree = build_tree(return_type, convert=False)
+        requirements = getattr(scoring_function, 'required_inputs', ())
+        if not all(req in tree for req in requirements):
+            continue
+        return tree
+
+    raise UnsatisfiableType("Could not meet input requirements.")
+
+
+def next_generation(
+        trees, scoring_fn,
+        select_fn=DEFAULT_TOURNAMENT_SELECT,
+        build_tree=build_tree_to_requirements, mutate=mutate,
+        crossover_rate=0.80, mutation_rate=0.01,
+        score_callback=None,
+        optimizations=DEFAULT_OPTIMIZATIONS
+    ):
+    """
+    Create next generation of trees from prior generation, maintaining current
+    size.
+    """
+    selector = select_fn(trees, scoring_fn, score_callback=score_callback, optimizations=optimizations)
     pop_size = len(trees)
     
     new_pop = [max(trees, key=scoring_fn)]
@@ -223,7 +273,7 @@ def next_generation(trees, scoring_fn, select_fn=functools.partial(tournament_se
                 except (UnsatisfiableType, RuntimeError):
                     continue
             else:
-                new_pop.append(build_tree_to_requirements(scoring_fn))
+                new_pop.append(build_tree(scoring_fn))
 
         elif random.random() <= mutation_rate / (1 - crossover_rate):
             new_pop.append(mutate(next(selector)))
@@ -254,33 +304,29 @@ def recursion_limit(limit):
         yield
     finally:
         sys.setrecursionlimit(orig_limit)
-                
-                
-def build_tree_to_requirements(scoring_function):
-    params = getattr(scoring_function, '__params', ())
-    if len(params) != 1:
-        raise ValueError("Scoring function must accept a single parameter.")
-    return_type, = params
-    
-    for __ in xrange(9999):
-        with recursion_limit(500):
-            tree = build_tree(return_type, convert=False)
-        requirements = getattr(scoring_function, 'required_inputs', ())
-        if not all(req in tree for req in requirements):
-            continue
-        return tree
-    
-    raise UnsatisfiableType("Could not meet input requirements.")
     
 
-def optimize(scoring_function, population_size=250, iterations=25, build_tree=build_tree, next_generation=next_generation, show_scores=True):  
+def optimize(
+        scoring_function,
+        population_size=250,
+        iterations=25,
+        build_tree=build_tree,
+        next_generation=next_generation,
+        show_scores=True,
+        optimizations=DEFAULT_OPTIMIZATIONS
+    ):
     print("Creating initial population of {}.".format(population_size))
     sys.stdout.flush()
+
+    build_to_requirements = functools.partial(
+        build_tree_to_requirements,
+        build_tree=build_tree,
+    )
     
     population = []
     for __ in xrange(population_size):
         try:
-            tree = build_tree_to_requirements(scoring_function)
+            tree = build_to_requirements(scoring_function)
             population.append(tree)
         except UnsatisfiableType:
             raise UnsatisfiableType(
@@ -323,11 +369,16 @@ def optimize(scoring_function, population_size=250, iterations=25, build_tree=bu
     with recursion_limit(600):
         for iteration in xrange(iterations):
             callback = functools.partial(score_callback, iteration)
-            population = next_generation(population, scoring_function, score_callback=callback)
+            population = next_generation(
+                population,
+                scoring_function,
+                build_tree=build_to_requirements,
+                mutate=mutate,
+                score_callback=callback,
+                optimizations=optimizations,
+            )
             if early_stop:
                 break
         
     best_tree = max(best_tree, key=scoring_function)
     return best_tree
-    
-        
