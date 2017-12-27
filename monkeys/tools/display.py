@@ -53,7 +53,7 @@ def type_graph(simplify=False):
                     )
                 continue
                 
-            elif len(params) > 1:
+            elif len(list(params)) > 1:
                 # show composition of constructed type from constituents
                 graph.node(
                     targeting_function.readable_params, 
