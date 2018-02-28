@@ -1,4 +1,7 @@
 # monkeys
+![PyPI](https://img.shields.io/pypi/v/monkeys.svg)
+![Liberapay receiving](https://img.shields.io/liberapay/receives/hchasestevens.svg)
+
 > "If an army of monkeys were strumming on typewriters they might write all the books in the British Museum."
 
 `monkeys` is a framework designed to make genetic programming in Python accessible, quick, flexible, and fun.
