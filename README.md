@@ -1,6 +1,6 @@
 # monkeys
 [![PyPI version](https://badge.fury.io/py/monkeys.svg)](https://badge.fury.io/py/monkeys)
-![Liberapay receiving](https://img.shields.io/liberapay/receives/hchasestevens.svg)
+[![Liberapay receiving](https://img.shields.io/liberapay/receives/hchasestevens.svg)](https://liberapay.com/hchasestevens/)
 
 > "If an army of monkeys were strumming on typewriters they might write all the books in the British Museum."
 
